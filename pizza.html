@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pizzeria Deluxe</title>
+    <link rel="stylesheet" href="pizza.css">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <div class="logo">
+                <h2>🍕 Pizzeria Deluxe</h2>
+            </div>
+            <nav class="main-nav" aria-label="Main navigation">
+                <ul>
+                    <li><a href="#menu">Menu</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="#gallery">Gallery</a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main">
+        <!-- HERO -->
+        <section class="hero">
+            <div class="container hero-inner">
+                <div class="hero-text">
+                    <h1>Welcome to <span style="color: #ff6b35;">Pizzeria Deluxe</span></h1>
+                    <p class="lead">Authentic Italian pizza crafted with passion and premium ingredients</p><br>
+                    <p>
+                        <a class="btn primary" href="#menu">Order Now</a>
+                        <a class="btn ghost" href="#gallery">See Our Menu</a>
+                    </p>
+                </div>
+                <div class="hero-image">
+                    <img src="pizza1.jpg" alt="Pizza">
+                </div>
+            </div>
+        </section>
+
+        <!-- MENU -->
+        <section id="menu" class="section menu">
+            <div class="container">
+                <h2>Our Signature Pizzas</h2>
+                <div class="cards">
+                    <article class="card">
+                        <h3>🍅 Margherita</h3>
+                        <p>Classic combination of tomato, fresh mozzarella, basil, and extra virgin olive oil.</p>
+                        <span class="price">$12.99</span>
+                    </article>
+                    <article class="card">
+                        <h3>🍖 Pepperoni</h3>
+                        <p>Loaded with sliced pepperoni and a blend of Italian cheeses.</p>
+                        <span class="price">$14.99</span>
+                    </article>
+                    <article class="card">
+                        <h3>🌱 Veggie Supreme</h3>
+                        <p>Fresh vegetables including bell peppers, onions, mushrooms, and olives.</p>
+                        <span class="price">$13.99</span>
+                    </article>
+                    <article class="card">
+                        <h3>🍤 Seafood Special</h3>
+                        <p>Shrimp, calamari, and fresh clams with garlic and white wine sauce.</p>
+                        <span class="price">$16.99</span>
+                    </article>
+                    <article class="card">
+                        <h3>🍗 BBQ Chicken</h3>
+                        <p>Tender grilled chicken with BBQ sauce, red onions, and cilantro.</p>
+                        <span class="price">$15.99</span>
+                    </article>
+                    <article class="card">
+                        <h3>🌶️ Spicy Inferno</h3>
+                        <p>Extra spicy with jalapeños, ghost peppers, and hot sauce drizzle.</p>
+                        <span class="price">$14.99</span>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- ABOUT -->
+        <section id="about" class="section about">
+            <div class="container">
+                <h2>About Our Pizzeria</h2>
+                <p>Since 2015, Pizzeria Deluxe has been dedicated to bringing authentic Italian pizza experience to our community. We use only the finest imported ingredients and traditional wood-fired oven techniques to create pizzas that are nothing short of exceptional.</p>
+                <div class="features">
+                    <div class="feature">
+                        <strong>🔥 Wood-Fired Oven</strong>
+                        <p>Traditional Italian oven for authentic crust and flavor</p>
+                    </div>
+                    <div class="feature">
+                        <strong>🌿 Fresh Ingredients</strong>
+                        <p>Sourced directly from local and Italian suppliers</p>
+                    </div>
+                    <div class="feature">
+                        <strong>👨‍🍳 Expert Chefs</strong>
+                        <p>Trained pizzaiolos with years of international experience</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- GALLERY -->
+        <section id="gallery" class="section gallery">
+            <div class="container">
+                <h2>Photo Gallery</h2>
+                <div class="gallery-grid">
+                    <figure class="photo">
+                        <img src="pizza1.jpg" alt="Fresh pizza">
+                        <figcaption>Freshly Baked</figcaption>
+                    </figure>
+                    <figure class="photo">
+                        <img src="pizza2.jpg" alt="Pizza oven">
+                        <figcaption>Wood Fired</figcaption>
+                    </figure>
+                    <figure class="photo">
+                        <img src="pizza3.jpg" alt="Appetizers">
+                        <figcaption>Appetizers</figcaption>
+                    </figure>
+                    <figure class="photo">
+                        <img src="pizza4.jpg" alt="Restaurant">
+                        <figcaption>Dining Area</figcaption>
+                    </figure>
+                </div>
+            </div>
+        </section>
+
+        <!-- CONTACT -->
+        <section id="contact" class="section contact">
+            <div class="container contact-inner">
+                <div>
+                    <h2>Get in Touch</h2>
+                    <p><strong>Hours:</strong> Mon-Thu 11AM-10PM | Fri-Sat 11AM-11PM | Sun 12PM-9PM</p>
+                    <p><strong>Phone:</strong> (555) 123-4567</p>
+                    <p><strong>Address:</strong> 123 Pizza Lane, Food City, FC 12345</p>
+                </div>
+                <form class="contact-form" onsubmit="return false;" aria-label="Contact form">
+                    <label>
+                        <span class="label-text">Your Name</span>
+                        <input type="text" placeholder="Name" />
+                    </label>
+                    <label>
+                        <span class="label-text">Email</span>
+                        <input type="email" placeholder="Email" />
+                    </label>
+                    <label>
+                        <span class="label-text">Message</span>
+                        <textarea placeholder="Your message..."></textarea>
+                    </label>
+                    <p><button class="btn primary">Send Message</button></p>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 Pizzeria Deluxe. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
