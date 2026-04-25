@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CODE-X | IoT Wearable Telemetry</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="project.css">
+</head>
+<body>
+
+  <div class="header-nav">
+    <div class="logo">
+      <i class="fas fa-heartbeat beat-icon"></i>
+      <span>CODE-X <small> SYSTEM LIVE</small></span>
+    </div>
+    <div class="connection-status">
+      <span class="dot-online"></span> Remote Server: Connected
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+    <aside class="sidebar">
+      <ul>
+        <li onclick="showPage('patients-view')"><i class="fas fa-th-large"></i> Dashboard</li>
+        <li onclick="showPage('patients-register')"><i class="fas fa-user-plus"></i> Admit Patient</li>
+        <li onclick="showPage('doctors')"><i class="fas fa-user-md"></i> Staff Online</li>
+      </ul>
+    </aside>
+
+    <main class="content-body">
+      <section id="patients-view" class="page">
+        <h2>Live Patient Monitoring</h2>
+        <div id="patients" class="patient-grid"></div>
+      </section>
+
+      <section id="patients-register" class="page" style="display:none;">
+        <h2>Patient Admission</h2>
+        <form id="patient-form">
+          <input type="text" id="name" placeholder="Full Name" required>
+          <input type="text" id="bed" placeholder="Bed / Ward ID" required>
+          <textarea id="patient-notes" placeholder="Initial clinical notes..."></textarea>
+          <button type="submit">Start Tracking</button>
+        </form>
+      </section>
+
+      <section id="patient-details" class="page" style="display:none;">
+        <div class="telemetry-box">
+            <div class="tele-top">
+                <button class="back-btn" onclick="showPage('patients-view')"><i class="fas fa-arrow-left"></i> BACK</button>
+                <div class="device-info">WEARABLE SYNC ACTIVE: #ID-9902</div>
+            </div>
+            
+            <h1 id="det-name">Patient Name</h1>
+            <p id="det-bed">Location: --</p>
+
+            <div class="vitals-display">
+                <div class="monitor-card heart">
+                    <div class="label">HEART RATE</div>
+                    <div class="value-row">
+                        <i class="fas fa-heart beat-icon-small"></i>
+                        <span id="det-hr">--</span> <small>BPM</small>
+                    </div>
+                    <div class="ecg-line"></div>
+                </div>
+
+                <div class="monitor-card oxygen">
+                    <div class="label">OXYGEN LEVEL</div>
+                    <div class="value-row">
+                        <i class="fas fa-lungs"></i>
+                        <span id="det-ox">--</span> <small>%</small>
+                    </div>
+                    <div class="progress-bar"><div id="ox-fill"></div></div>
+                </div>
+            </div>
+
+            <div class="notes-footer">
+                <strong>Medical Notes:</strong>
+                <p id="det-notes">No notes available.</p>
+            </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="project.js"></script>
+</body>
+</html>
