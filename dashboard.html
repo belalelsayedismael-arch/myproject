@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InstaFlow — Comment-to-DM Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─── CSS Variables ─────────────────────────────────────── */
+    :root {
+      --bg:         #0a0a0f;
+      --surface:    #12121a;
+      --surface2:   #1a1a26;
+      --border:     #ffffff0f;
+      --border2:    #ffffff18;
+      --accent:     #e040fb;
+      --accent2:    #7c4dff;
+      --accent3:    #40c4ff;
+      --success:    #00e676;
+      --danger:     #ff1744;
+      --warn:       #ffab40;
+      --text:       #f0f0f8;
+      --text2:      #9090b0;
+      --text3:      #555570;
+      --radius:     12px;
+      --radius-sm:  8px;
+      --font-head:  'Syne', sans-serif;
+      --font-body:  'DM Sans', sans-serif;
+      --font-mono:  'DM Mono', monospace;
+    }
+
+    /* ─── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── Background ─────────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 10%, #e040fb18 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 80%, #7c4dff14 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    /* ─── Layout ─────────────────────────────────────────────── */
+    .app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+    /* ─── Sidebar ─────────────────────────────────────────────── */
+    .sidebar {
+      width: 240px; flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 28px 0;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .logo {
+      padding: 0 24px 32px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 18px;
+    }
+    .logo-text {
+      font-family: var(--font-head);
+      font-size: 20px; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent3));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .nav-section {
+      padding: 0 12px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .nav-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.12em;
+      color: var(--text3); text-transform: uppercase;
+      padding: 0 12px; margin: 16px 0 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all 0.15s;
+      font-size: 14px; font-weight: 500; color: var(--text2);
+      border: none; background: transparent; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active {
+      background: linear-gradient(135deg, #e040fb18, #7c4dff18);
+      color: var(--accent); border: 1px solid #e040fb22;
+    }
+    .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-footer {
+      margin-top: auto; padding: 16px 24px 0;
+      border-top: 1px solid var(--border);
+    }
+    .status-dot {
+      display: inline-block; width: 7px; height: 7px;
+      border-radius: 50%; background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+      margin-right: 6px; animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .status-text { font-size: 12px; color: var(--text2); }
+
+    /* ─── Main Content ────────────────────────────────────────── */
+    .main { flex: 1; overflow-y: auto; }
+
+    /* ─── Page Header ─────────────────────────────────────────── */
+    .page-header {
+      padding: 36px 40px 0;
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .page-title { font-family: var(--font-head); font-size: 30px; font-weight: 800; }
+    .page-subtitle { color: var(--text2); font-size: 14px; margin-top: 4px; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+
+    /* ─── Stats Bar ───────────────────────────────────────────── */
+    .stats-bar {
+      display: flex; gap: 16px;
+      padding: 28px 40px 0;
+    }
+    .stat-card {
+      flex: 1; background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 20px 24px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-value {
+      font-family: var(--font-head);
+      font-size: 32px; font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label { font-size: 13px; color: var(--text2); margin-top: 2px; }
+
+    /* ─── Section ─────────────────────────────────────────────── */
+    .section { padding: 32px 40px; }
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .section-title {
+      font-family: var(--font-head); font-size: 18px; font-weight: 700;
+    }
+
+    /* ─── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-family: var(--font-body); font-size: 14px; font-weight: 500;
+      cursor: pointer; border: none; transition: all 0.15s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text);
+      border: 1px solid var(--border2);
+    }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger {
+      background: transparent; color: var(--danger);
+      border: 1px solid #ff174422;
+    }
+    .btn-danger:hover { background: #ff174414; border-color: var(--danger); }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ─── Cards ───────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--border2); }
+    .card-body { padding: 24px; }
+
+    /* ─── Campaign Cards ──────────────────────────────────────── */
+    .campaigns-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+    }
+    .campaign-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: all 0.2s;
+      animation: fadeInUp 0.3s ease both;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .campaign-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    .campaign-card.inactive { opacity: 0.6; }
+
+    .campaign-post-thumb {
+      width: 100%; height: 140px; object-fit: cover;
+      background: var(--surface2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text3); font-size: 13px;
+    }
+    .campaign-post-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .campaign-body { padding: 18px 20px; }
+    .campaign-name {
+      font-family: var(--font-head);
+      font-size: 16px; font-weight: 700; margin-bottom: 8px;
+    }
+    .campaign-meta { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+    .keyword-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .chip {
+      padding: 3px 10px; border-radius: 20px; font-size: 12px;
+      font-family: var(--font-mono);
+      background: #e040fb18; color: var(--accent);
+      border: 1px solid #e040fb30;
+    }
+    .campaign-messages {
+      display: flex; flex-direction: column; gap: 8px;
+      margin-bottom: 16px;
+    }
+    .msg-row {
+      background: var(--surface2); border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+    .msg-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--text3); margin-bottom: 4px;
+    }
+    .msg-text { font-size: 13px; color: var(--text2); }
+
+    .campaign-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    }
+    .badge-active { background: #00e67618; color: var(--success); border: 1px solid #00e67630; }
+    .badge-inactive { background: #ffffff0a; color: var(--text3); border: 1px solid var(--border); }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+    /* ─── Forms ───────────────────────────────────────────────── */
+    .form-grid { display: grid; gap: 20px; }
+    .form-grid-2 { grid-template-columns: 1fr 1fr; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .label {
+      font-size: 12px; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text2);
+    }
+    .label-hint { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text3); font-size: 11px; }
+    .input, .textarea, .select {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); color: var(--text);
+      font-family: var(--font-body); font-size: 14px;
+      padding: 10px 14px; width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input:focus, .textarea:focus, .select:focus {
+      outline: none; border-color: var(--accent);
+      box-shadow: 0 0 0 3px #e040fb18;
+    }
+    .input::placeholder, .textarea::placeholder { color: var(--text3); }
+    .textarea { resize: vertical; min-height: 80px; }
+    .input-mono { font-family: var(--font-mono); font-size: 13px; }
+
+    /* Post Preview Box */
+    .post-preview {
+      display: none; background: var(--surface2);
+      border: 1px solid var(--border2); border-radius: var(--radius-sm);
+      overflow: hidden; margin-top: 8px;
+    }
+    .post-preview.visible { display: flex; gap: 0; }
+    .post-preview-thumb {
+      width: 80px; height: 80px; flex-shrink: 0;
+      object-fit: cover; background: var(--surface);
+    }
+    .post-preview-info { padding: 12px 14px; }
+    .post-preview-type { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+    .post-preview-caption { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+    /* ─── Modal ───────────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 100;
+      background: #000000cc; backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 16px; width: 100%; max-width: 620px;
+      max-height: 90vh; overflow-y: auto;
+      animation: modalIn 0.2s ease;
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 28px 0;
+    }
+    .modal-title { font-family: var(--font-head); font-size: 20px; font-weight: 700; }
+    .modal-close {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 50%; width: 32px; height: 32px;
+      cursor: pointer; color: var(--text2); font-size: 18px;
+      display: grid; place-items: center; transition: all 0.15s;
+    }
+    .modal-close:hover { color: var(--text); border-color: var(--border2); }
+    .modal-body { padding: 24px 28px 28px; }
+
+    /* ─── Settings Page ───────────────────────────────────────── */
+    .settings-card { max-width: 600px; }
+    .settings-form { display: flex; flex-direction: column; gap: 20px; }
+    .alert {
+      padding: 12px 16px; border-radius: var(--radius-sm);
+      font-size: 13px; display: none;
+    }
+    .alert.visible { display: block; }
+    .alert-success { background: #00e67614; color: var(--success); border: 1px solid #00e67630; }
+    .alert-error { background: #ff174414; color: #ff6e6e; border: 1px solid #ff174430; }
+    .alert-warn { background: #ffab4014; color: var(--warn); border: 1px solid #ffab4030; }
+
+    /* ─── Empty State ─────────────────────────────────────────── */
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+    .empty-icon { font-size: 48px; opacity: 0.3; }
+    .empty-title { font-family: var(--font-head); font-size: 20px; color: var(--text2); }
+    .empty-sub { font-size: 14px; color: var(--text3); max-width: 300px; }
+
+    /* ─── Toast ───────────────────────────────────────────────── */
+    .toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 999;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: var(--radius-sm); padding: 12px 20px;
+      font-size: 14px; display: flex; align-items: center; gap: 10px;
+      animation: toastIn 0.25s ease;
+      box-shadow: 0 8px 32px #00000060;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .toast.success { border-left: 3px solid var(--success); }
+    .toast.error   { border-left: 3px solid var(--danger); }
+
+    /* ─── Toggle Switch ───────────────────────────────────────── */
+    .toggle {
+      position: relative; width: 40px; height: 22px; cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; inset: 0;
+      background: var(--surface2); border: 1px solid var(--border2);
+      border-radius: 20px; transition: all 0.2s;
+    }
+    .toggle-slider::before {
+      content: ''; position: absolute;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--text3); left: 2px; top: 2px;
+      transition: all 0.2s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: #fff; }
+
+    /* ─── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ─── Page Transitions ─────────────────────────────────────── */
+    .page { display: none; }
+    .page.active {
+      display: block;
+      animation: pageFadeIn 0.25s ease;
+    }
+    @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ─── Divider ─────────────────────────────────────────────── */
+    .divider {
+      border: none; border-top: 1px solid var(--border);
+      margin: 24px 0;
+    }
+
+    /* ─── Loader ──────────────────────────────────────────────── */
+    .spinner {
+      width: 16px; height: 16px; border-radius: 50%;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      animation: spin 0.6s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Info Box ────────────────────────────────────────────── */
+    .info-box {
+      background: #40c4ff0c; border: 1px solid #40c4ff22;
+      border-radius: var(--radius-sm); padding: 14px 16px;
+      font-size: 13px; color: var(--text2); line-height: 1.6;
+    }
+    .info-box strong { color: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ══════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📲</div>
+      <span class="logo-text">InstaFlow</span>
+    </div>
+
+    <nav class="nav-section">
+      <span class="nav-label">Navigation</span>
+      <button class="nav-item active" onclick="showPage('campaigns')" id="nav-campaigns">
+        <span class="icon">⚡</span> Campaigns
+      </button>
+      <button class="nav-item" onclick="showPage('settings')" id="nav-settings">
+        <span class="icon">⚙️</span> Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div>
+        <span class="status-dot"></span>
+        <span class="status-text" id="health-status">Checking…</span>
+      </div>
+      <div style="margin-top: 8px; font-size: 11px; color: var(--text3); font-family: var(--font-mono);">
+        v1.0.0 · Graph API v19
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ══════════════════════════════════════════════════ -->
+  <main class="main">
+
+    <!-- ─── CAMPAIGNS PAGE ────────────────────────────────────── -->
+    <div id="page-campaigns" class="page active">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Campaigns</h1>
+          <p class="page-subtitle">Automate comment replies &amp; DMs when keywords are detected</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-primary" onclick="openCampaignModal()">
+            ＋ New Campaign
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-bar" id="stats-bar">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total Campaigns</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-active">—</div>
+          <div class="stat-label">Active</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-processed">—</div>
+          <div class="stat-label">Comments Processed</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div id="campaigns-container">
+          <div class="empty-state">
+            <div class="spinner" style="width:24px;height:24px;border-color:var(--border2);border-top-color:var(--accent)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SETTINGS PAGE ─────────────────────────────────────── -->
+    <div id="page-settings" class="page">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Settings</h1>
+          <p class="page-subtitle">Connect your Instagram Business account</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="info-box" style="margin-bottom: 24px; max-width: 600px;">
+          <strong>⚠️ DM Limitation:</strong> The Instagram Graph API can only send DMs
+          to users who have previously messaged your business, <em>or</em> if your app
+          has the <code>instagram_manage_messages</code> permission approved for
+          standard access. See the README for how to apply.
+        </div>
+
+        <div class="card settings-card">
+          <div class="card-body">
+            <div class="settings-form">
+              <div class="form-group">
+                <label class="label">
+                  Instagram Access Token
+                  <span class="label-hint">(long-lived, 60-day expiry)</span>
+                </label>
+                <input class="input input-mono" type="password" id="access-token"
+                  placeholder="EAAxxxxxxxxxxxxxxxx" autocomplete="off" />
+              </div>
+
+              <div class="form-group">
+                <label class="label">Instagram Business Account ID</label>
+                <input class="input input-mono" id="business-account-id"
+                  placeholder="170000000000000" />
+              </div>
+
+              <div id="settings-alert" class="alert"></div>
+
+              <div>
+                <button class="btn btn-primary" onclick="saveSettings()" id="save-settings-btn">
+                  Save Credentials
+                </button>
+              </div>
+
+              <hr class="divider" />
+
+              <div>
+                <div class="section-title" style="font-size: 15px; margin-bottom: 12px;">
+                  Webhook Info
+                </div>
+                <div class="form-group">
+                  <label class="label">Webhook URL <span class="label-hint">(copy this into Facebook Developer Console)</span></label>
+                  <div style="display:flex;gap:8px;">
+                    <input class="input input-mono" id="webhook-url" readonly
+                      value="Loading…" style="flex:1;" />
+                    <button class="btn btn-secondary" onclick="copyWebhookUrl()">Copy</button>
+                  </div>
+                </div>
+                <div class="form-group" style="margin-top:14px;">
+                  <label class="label">Verify Token</label>
+                  <div class="info-box" style="font-family: var(--font-mono); font-size:13px;">
+                    Set <strong>WEBHOOK_VERIFY_TOKEN</strong> in your <code>.env</code> file and
+                    enter the <em>same value</em> in the Facebook Webhook panel.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ═══ NEW / EDIT CAMPAIGN MODAL ══════════════════════════════ -->
+<div class="modal-backdrop" id="campaign-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">New Campaign</h2>
+      <button class="modal-close" onclick="closeCampaignModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-campaign-id" />
+
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label class="label">Campaign Name</label>
+          <input class="input" id="f-name" placeholder='e.g. "Free Guide Giveaway"' />
+        </div>
+
+        <div class="form-group full">
+          <label class="label">
+            Instagram Post ID
+            <span class="label-hint"> — tab out to preview</span>
+          </label>
+          <input class="input input-mono" id="f-post-id"
+            placeholder="17841400000000000"
+            onblur="fetchPostPreview()" />
+          <div class="post-preview" id="post-preview-box">
+            <img class="post-preview-thumb" id="post-preview-img" src="" alt="" />
+            <div class="post-preview-info">
+              <div class="post-preview-type" id="post-preview-type"></div>
+              <div class="post-preview-caption" id="post-preview-caption"></div>
+            </div>
+          </div>
+          <div id="post-preview-error" style="font-size:12px;color:var(--danger);margin-top:4px;display:none;"></div>
+        </div>
+
+        <div class="form-group full">
+          <label class="label">
+            Trigger Keywords
+            <span class="label-hint"> — comma-separated, case-insensitive partial match</span>
+          </label>
+          <input class="input" id="f-keywords" placeholder="free, link, info, send me" />
+        </div>
+
+        <div class="form-group full">
+          <label class="label">Public Comment Reply</label>
+          <textarea class="textarea" id="f-comment-reply" rows="3"
+            placeholder="Hey! Check your DMs — I just sent you the link 🎉"></textarea>
+        </div>
+
+        <div class="form-group full">
+          <label class="label">Private DM Message</label>
+          <textarea class="textarea" id="f-dm-message" rows="4"
+            placeholder="Hi! Here's the link you asked for: https://…
+Thanks for the interest! 🙌"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="label">Status</label>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+            <label class="toggle">
+              <input type="checkbox" id="f-is-active" checked />
+              <span class="toggle-slider"></span>
+            </label>
+            <span style="font-size:14px;color:var(--text2);">Active</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:24px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeCampaignModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveCampaign()" id="save-campaign-btn">
+          Save Campaign
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ DELETE CONFIRM MODAL ═══════════════════════════════════ -->
+<div class="modal-backdrop" id="delete-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Delete Campaign?</h2>
+      <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text2);font-size:14px;margin-bottom:24px;">
+        This will permanently delete the campaign. Processed comment history will be kept.
+      </p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()" id="confirm-delete-btn">
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST CONTAINER ════════════════════════════════════════ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   InstaFlow Dashboard — Vanilla JS SPA
+   ═══════════════════════════════════════════════════════════════ */
+
+let campaigns = [];
+let deleteCampaignId = null;
+
+// ─── Page Navigation ──────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+}
+
+// ─── Toast ─────────────────────────────────────────────────────
+function toast(msg, type = 'success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${type === 'success' ? '✓' : '✕'}</span> ${msg}`;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ─── Health Check ──────────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch('/health');
+    const d = await r.json();
+    const el = document.getElementById('health-status');
+    el.textContent = d.status === 'ok' ? 'System Online' : 'Degraded';
+  } catch {
+    document.getElementById('health-status').textContent = 'Offline';
+  }
+}
+
+// ─── Stats ─────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const d = await r.json();
+    document.getElementById('stat-total').textContent     = d.total_campaigns;
+    document.getElementById('stat-active').textContent    = d.active_campaigns;
+    document.getElementById('stat-processed').textContent = d.total_processed;
+  } catch {}
+}
+
+// ─── Campaigns ─────────────────────────────────────────────────
+async function loadCampaigns() {
+  const container = document.getElementById('campaigns-container');
+  try {
+    const r = await fetch('/api/campaigns');
+    campaigns = await r.json();
+    renderCampaigns();
+  } catch(e) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">⚠️</div>
+      <div class="empty-title">Could not load campaigns</div>
+      <div class="empty-sub">${e.message}</div>
+    </div>`;
+  }
+}
+
+function renderCampaigns() {
+  const container = document.getElementById('campaigns-container');
+  if (!campaigns.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">⚡</div>
+      <div class="empty-title">No campaigns yet</div>
+      <div class="empty-sub">Create your first campaign to start automating comment replies and DMs.</div>
+      <button class="btn btn-primary" style="margin-top:8px;" onclick="openCampaignModal()">＋ New Campaign</button>
+    </div>`;
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'campaigns-grid';
+  campaigns.forEach((c, i) => {
+    grid.appendChild(buildCampaignCard(c, i));
+  });
+  container.innerHTML = '';
+  container.appendChild(grid);
+}
+
+function buildCampaignCard(c, index) {
+  const div = document.createElement('div');
+  div.className = `campaign-card ${c.is_active ? '' : 'inactive'}`;
+  div.style.animationDelay = (index * 0.05) + 's';
+
+  const thumbContent = c.post_preview_url
+    ? `<img src="${esc(c.post_preview_url)}" alt="Post thumbnail" onerror="this.style.display='none'" />`
+    : `<span>No preview</span>`;
+
+  const chips = (c.keyword_list || [])
+    .map(k => `<span class="chip">${esc(k)}</span>`).join('');
+
+  const badge = c.is_active
+    ? `<span class="badge badge-active"><span class="badge-dot"></span>Active</span>`
+    : `<span class="badge badge-inactive"><span class="badge-dot"></span>Inactive</span>`;
+
+  div.innerHTML = `
+    <div class="campaign-post-thumb">${thumbContent}</div>
+    <div class="campaign-body">
+      <div class="campaign-name">${esc(c.name)}</div>
+      <div class="campaign-meta">Post ID: <code style="font-family:var(--font-mono);font-size:11px;">${esc(c.post_id)}</code></div>
+      <div class="keyword-chips">${chips}</div>
+      <div class="campaign-messages">
+        <div class="msg-row">
+          <div class="msg-label">💬 Comment Reply</div>
+          <div class="msg-text">${esc(c.comment_reply.substring(0, 80))}${c.comment_reply.length > 80 ? '…' : ''}</div>
+        </div>
+        <div class="msg-row">
+          <div class="msg-label">📩 DM Message</div>
+          <div class="msg-text">${esc(c.dm_message.substring(0, 80))}${c.dm_message.length > 80 ? '…' : ''}</div>
+        </div>
+      </div>
+    </div>
+    <div class="campaign-footer">
+      ${badge}
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-secondary btn-sm" onclick="toggleCampaign(${c.id})">
+          ${c.is_active ? 'Pause' : 'Activate'}
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="editCampaign(${c.id})">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="openDeleteModal(${c.id})">Delete</button>
+      </div>
+    </div>
+  `;
+  return div;
+}
+
+// ─── Campaign Modal ─────────────────────────────────────────────
+function openCampaignModal(id = null) {
+  clearModalForm();
+  document.getElementById('edit-campaign-id').value = id || '';
+  document.getElementById('modal-title').textContent = id ? 'Edit Campaign' : 'New Campaign';
+
+  if (id) {
+    const c = campaigns.find(x => x.id === id);
+    if (c) {
+      document.getElementById('f-name').value = c.name;
+      document.getElementById('f-post-id').value = c.post_id;
+      document.getElementById('f-keywords').value = c.keywords;
+      document.getElementById('f-comment-reply').value = c.comment_reply;
+      document.getElementById('f-dm-message').value = c.dm_message;
+      document.getElementById('f-is-active').checked = c.is_active;
+      if (c.post_preview_url) showPostPreview(c.post_preview_url, c.post_caption, c.media_type);
+    }
+  }
+  document.getElementById('campaign-modal').classList.add('open');
+}
+
+function editCampaign(id) { openCampaignModal(id); }
+function closeCampaignModal() { document.getElementById('campaign-modal').classList.remove('open'); }
+
+function clearModalForm() {
+  ['f-name','f-post-id','f-keywords','f-comment-reply','f-dm-message'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-is-active').checked = true;
+  hidePostPreview();
+}
+
+async function saveCampaign() {
+  const editId = document.getElementById('edit-campaign-id').value;
+  const btn = document.getElementById('save-campaign-btn');
+
+  const payload = {
+    name:          document.getElementById('f-name').value.trim(),
+    post_id:       document.getElementById('f-post-id').value.trim(),
+    keywords:      document.getElementById('f-keywords').value.trim(),
+    comment_reply: document.getElementById('f-comment-reply').value.trim(),
+    dm_message:    document.getElementById('f-dm-message').value.trim(),
+    is_active:     document.getElementById('f-is-active').checked,
+  };
+
+  if (!payload.name || !payload.post_id || !payload.keywords || !payload.comment_reply || !payload.dm_message) {
+    toast('Please fill in all fields.', 'error'); return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  try {
+    const url = editId ? `/api/campaigns/${editId}` : '/api/campaigns';
+    const method = editId ? 'PUT' : 'POST';
+    const r = await fetch(url, {
+      method, headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || 'Save failed'); }
+    toast(editId ? 'Campaign updated!' : 'Campaign created!');
+    closeCampaignModal();
+    await Promise.all([loadCampaigns(), loadStats()]);
+  } catch(e) {
+    toast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Save Campaign';
+  }
+}
+
+async function toggleCampaign(id) {
+  try {
+    const r = await fetch(`/api/campaigns/${id}/toggle`, { method: 'PATCH' });
+    const d = await r.json();
+    toast(d.is_active ? 'Campaign activated' : 'Campaign paused');
+    await Promise.all([loadCampaigns(), loadStats()]);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ─── Delete Modal ───────────────────────────────────────────────
+function openDeleteModal(id) {
+  deleteCampaignId = id;
+  document.getElementById('delete-modal').classList.add('open');
+}
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.remove('open');
+  deleteCampaignId = null;
+}
+async function confirmDelete() {
+  if (!deleteCampaignId) return;
+  const btn = document.getElementById('confirm-delete-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await fetch(`/api/campaigns/${deleteCampaignId}`, { method: 'DELETE' });
+    toast('Campaign deleted');
+    closeDeleteModal();
+    await Promise.all([loadCampaigns(), loadStats()]);
+  } catch(e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.innerHTML = 'Delete'; }
+}
+
+// ─── Post Preview ───────────────────────────────────────────────
+async function fetchPostPreview() {
+  const postId = document.getElementById('f-post-id').value.trim();
+  const errEl = document.getElementById('post-preview-error');
+  errEl.style.display = 'none';
+  if (!postId) { hidePostPreview(); return; }
+  try {
+    const r = await fetch(`/api/post-preview/${encodeURIComponent(postId)}`);
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail); }
+    const d = await r.json();
+    showPostPreview(d.media_url, d.caption, d.media_type);
+  } catch(e) {
+    hidePostPreview();
+    errEl.textContent = '⚠ ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function showPostPreview(url, caption, type) {
+  const box = document.getElementById('post-preview-box');
+  document.getElementById('post-preview-img').src = url || '';
+  document.getElementById('post-preview-type').textContent = type || '';
+  document.getElementById('post-preview-caption').textContent = caption || '(no caption)';
+  box.classList.add('visible');
+}
+function hidePostPreview() {
+  document.getElementById('post-preview-box').classList.remove('visible');
+}
+
+// ─── Settings ───────────────────────────────────────────────────
+async function loadSettings() {
+  // Set webhook URL
+  document.getElementById('webhook-url').value =
+    window.location.origin + '/webhook/instagram';
+
+  try {
+    const r = await fetch('/api/config');
+    const d = await r.json();
+    if (d.access_token) document.getElementById('access-token').placeholder = d.access_token;
+    if (d.business_account_id) document.getElementById('business-account-id').value = d.business_account_id;
+  } catch {}
+}
+
+async function saveSettings() {
+  const token = document.getElementById('access-token').value.trim();
+  const accountId = document.getElementById('business-account-id').value.trim();
+  const alertEl = document.getElementById('settings-alert');
+  const btn = document.getElementById('save-settings-btn');
+
+  alertEl.className = 'alert'; alertEl.style.display = 'none';
+
+  if (!token || !accountId) {
+    alertEl.textContent = 'Both fields are required.';
+    alertEl.className = 'alert alert-error visible'; return;
+  }
+
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  try {
+    const r = await fetch('/api/config', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ access_token: token, business_account_id: accountId }),
+    });
+    if (!r.ok) throw new Error('Failed to save');
+    alertEl.textContent = '✓ Credentials saved successfully.';
+    alertEl.className = 'alert alert-success visible';
+    document.getElementById('access-token').value = '';
+  } catch(e) {
+    alertEl.textContent = '✕ ' + e.message;
+    alertEl.className = 'alert alert-error visible';
+  } finally {
+    btn.disabled = false; btn.innerHTML = 'Save Credentials';
+  }
+}
+
+function copyWebhookUrl() {
+  const url = document.getElementById('webhook-url').value;
+  navigator.clipboard.writeText(url).then(() => toast('Webhook URL copied!'));
+}
+
+// ─── Close modals on backdrop click ────────────────────────────
+document.getElementById('campaign-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeCampaignModal();
+});
+document.getElementById('delete-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeDeleteModal();
+});
+
+// ─── Escape key closes modals ───────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeCampaignModal(); closeDeleteModal();
+  }
+});
+
+// ─── Utility ───────────────────────────────────────────────────
+function esc(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Init ───────────────────────────────────────────────────────
+(async function init() {
+  await Promise.all([checkHealth(), loadStats(), loadCampaigns(), loadSettings()]);
+  // Refresh stats every 30s
+  setInterval(loadStats, 30_000);
+  setInterval(checkHealth, 60_000);
+})();
+</script>
+</body>
+</html>
